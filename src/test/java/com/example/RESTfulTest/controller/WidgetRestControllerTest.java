@@ -29,7 +29,7 @@ import static org.hamcrest.Matchers.*;
 class WidgetRestControllerTest {
 
     @MockBean
-    private WidgetService service;
+    private WidgetService widgetService;
 
     @Autowired
     private MockMvc mockMvc;
@@ -37,11 +37,12 @@ class WidgetRestControllerTest {
 
     @Test
     @DisplayName("GET /widgets success")
-    void testGetWidgetsSuccess() throws Exception {
+    void testGetWidgetsSuccess() throws Exception
+    {
         // Setup our mocked service
         Widget widget1 = new Widget(1l, "Widget Name", "Description", 1);
         Widget widget2 = new Widget(2l, "Widget 2 Name", "Description 2", 4);
-        doReturn(Lists.newArrayList(widget1, widget2)).when(service).findAll();
+        doReturn(Lists.newArrayList(widget1, widget2)).when(widgetService).findAll();
 
         // Execute the GET request
         mockMvc.perform(get("/rest/widgets"))
@@ -70,7 +71,7 @@ class WidgetRestControllerTest {
     @DisplayName("GET /rest/widget/1 - Not Found")
     void testGetWidgetByIdNotFound() throws Exception {
         // Setup our mocked service
-        doReturn(Optional.empty()).when(service).findById(1l);
+        doReturn(Optional.empty()).when(widgetService).findById(1l);
 
         // Execute the GET request
         mockMvc.perform(get("/rest/widget/{id}", 1L))
@@ -84,7 +85,7 @@ class WidgetRestControllerTest {
         // Setup our mocked service
         Widget widgetToPost = new Widget("New Widget", "This is my widget");
         Widget widgetToReturn = new Widget(1L, "New Widget", "This is my widget", 1);
-        doReturn(widgetToReturn).when(service).save(any());
+        doReturn(widgetToReturn).when(widgetService).save(any());
 
         // Execute the POST request
         mockMvc.perform(post("/rest/widget")
@@ -104,6 +105,16 @@ class WidgetRestControllerTest {
                 .andExpect(jsonPath("$.name", is("New Widget")))
                 .andExpect(jsonPath("$.description", is("This is my widget")))
                 .andExpect(jsonPath("$.version", is(1)));
+    }
+
+    @Test
+    @DisplayName("PUT /rest/widget/1")
+    public void testUpdateWidget() throws Exception {
+        Optional<Widget> widgetToUpdate = Optional.of(new Widget(1l,"Widget Name 2", "Description 2", 1));
+        Widget widget = new Widget(1l,"Widget Name 2", "Description 2", 1);
+        doReturn(widgetToUpdate).when(widgetService).findById(1L);
+        doReturn(widget).when(widgetService).save(any());
+        var respone = mockMvc.perform(put("/rest/widget/{id}",1L).contentType(MediaType.APPLICATION_JSON_VALUE).content(asJsonString(widgetToUpdate)).header(HttpHeaders.IF_MATCH,"1")).andExpect(status().isOk());
     }
 
 
